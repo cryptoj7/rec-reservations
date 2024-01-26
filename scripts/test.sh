@@ -14,6 +14,8 @@ fi
 rm ../prisma/test.db >/dev/null 2>/dev/null
 DATABASE_URL=file:test.db npx prisma db push >/dev/null
 
-npx mocha --require ts-node/register src/**/*.test.ts
+npx tsc --build
 
-npx clean-tests
+npx mocha dist/**/*.test.js
+
+rm ./prisma/*.test.db

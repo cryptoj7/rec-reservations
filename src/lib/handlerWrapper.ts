@@ -9,12 +9,14 @@ export function handlerWrapper(fn: WrappedHandler) {
         // default to hiding details
         result = APIResponse.ok();
       }
+      console.log(result.body);
       return res.status(result.statusCode).send(result.payload);
     } catch (err: any) {
       if (!(err instanceof APIResponse)) {
         console.error("UNEXPECTED ERROR!", err, err.stack);
         err = APIResponse.unknown();
       }
+      console.log(err.payload);
       return res.status(err.statusCode).send(err.payload);
     }
   };

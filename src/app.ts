@@ -14,7 +14,6 @@ import { attachDatabase, connectDatabase } from "./lib/db";
 
 //import auth from "./routes/auth.routes";
 import reservation from "./routes/reservation.routes";
-////import user from "./routes/user.routes";
 
 export async function setupApp({
   corsOrigin = CORS_ORIGIN,

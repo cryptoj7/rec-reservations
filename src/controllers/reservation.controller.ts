@@ -160,9 +160,11 @@ export const getReservations = handlerWrapper(async (req: Request) => {
 
   const reservations = await db(req).restaurant.findMany(query);
 
+  console.log(reservations)
+
   return APIResponse.good({
     reservations: reservations.filter(res => { // filter a small list of endorsements to match all dietary restrictions
-      if ('endorsements' in res && Array.isArray(res.endorsements)) {  // TS compile check should always be true
+      if (restrictions && 'endorsements' in res && Array.isArray(res.endorsements)) {  // TS compile check should always be true
         const endorsementNames = res.endorsements.map(e => e.name);
         return restrictions.every(restriction => endorsementNames.includes(restriction));
       }

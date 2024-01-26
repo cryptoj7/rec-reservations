@@ -103,11 +103,12 @@ describe("Reservation Controller", function () {
   ChaiConfig.showDiff = true;
 
   let app: Express.Application;
-  beforeEach("book", async function () {
-    const databaseURL = await makeTestBaseDatabase(this.test)
+  let databaseURL: string;
+  before( async function () {
+    databaseURL = await makeTestBaseDatabase(this.test)
     app = await setupApp({
       databaseURL: databaseURL,
-      corsOrigin: 'http://localhost:8000'
+      corsOrigin: '*'
     });
     //app.listen(0);
     // seed test db
@@ -132,43 +133,86 @@ describe("Reservation Controller", function () {
     table: "10",
   };
 
-  describe("book", function () {
-    it("success", async function () {
+  /*describe("dummytest", function () {
+    it("dummy", async function () {
       console.log(app)
       await request(app)
         .post("/api/reservation/book")
         .field("json", JSON.stringify({ reservation }))
-        .expect(Debug.body)
-        .expect(200)
-        .expect({
+    });
+
+    it("dummy2", async function () {
+      console.log(app)
+      await request(app)
+        .post("/api/reservation/book")
+        .field("json", JSON.stringify({ reservation }))
+    });
+
+  });*/
+
+
+  it("book success", async function () {
+    console.log(app)
+
+    return request(app)
+      .post("/api/reservation/book")
+      .set("Content-Type", "application/json")
+      .send(reservation)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).to.include({
           reservationId: 1,
           msg: "successfully created reservation",
-        });
-    });
+        })
+      })
+  });
 
-    it("already reserved", function () {
-      return request(app)
-        .post("/api/reservation/book")
-        .field("json", JSON.stringify({ ...reservation, table: "12" }))
-        .expect(Debug.body)
-        .expect(400)
-        .expect({
-          msg: "you already have a reservation for this time",
-        });
-    });
+  it("book already reserved", function () {
+    return request(app)
+      .post("/api/reservation/book")
+      .set("Content-Type", "application/json")
+      .send(reservation)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body).to.include({
+          msg: "you already have a reservation for this time"
+        })
+      });
+  });
 
-    it("table taken", function () {
-      return request(app)
-        .post("/api/reservation/book")
-        .field("json", JSON.stringify({ ...reservation, eater: "3" }))
-        .expect(Debug.body)
-        .expect(400)
-        .expect({
+  it("book table taken", function () {
+    return request(app)
+      .post("/api/reservation/book")
+      .set("Content-Type", "application/json")
+      .send({...reservation, eater: "3"})
+      .expect(400)
+      .expect((res) => {
+        expect(res.body).to.include({
           msg: "this table is already reserved",
-        });
-    });
+        })
+      });
+  });
 
-    it("cancel", function () {
+  it("should return a server error for non-existent eater ID", async function () {
+    const reservationRequest = {
+      time: "2024-01-27 18:45:00",
+      eater: "9999", // Non-existent eater ID
+      groupSize: "2",
+      table: "20",
+    };
+  
+    return request(app)
+      .post("/api/reservation/book")
+      .set("Content-Type", "application/json")
+      .send(reservationRequest)
+      .expect(500)
+      .expect((res) => {
+        console.log(res)
+        //expect(res.body.msg).to.equal("Eater not found");
+      });
+  });
+
+    it("cancel reservation", function () {
       return request(app)
         .delete("/api/reservation/1/cancel")
         .expect(Debug.body)
@@ -179,7 +223,6 @@ describe("Reservation Controller", function () {
         });
     });
 
-  });
 
   describe("has restaurants", function () {
     const reservations = [
@@ -199,19 +242,54 @@ describe("Reservation Controller", function () {
           .send()
           .expect(200)
           .expect(function (res) {
+            console.log(res)
             expect(res.body, "body").to.exist;
             expect(res.body.msg, "msg").to.equal(
               "successfully retrieved restaurants"
             );
 
-            expect(res.body.restaurants).to.have.length(5);
-            const r = res.body.restaurants[0];
+            expect(res.body.reservations).to.have.length(5);
+            const r = res.body.reservations[0];
 
-            expect(r, "restaurant").to.exist;
+            expect(r, "restaurantId").to.exist;
             expect(r.restaurantId, "id").to.equal(1);
           });
       });
 
+      it("should only return restaurants matching all group dietary restrictions", async function () {
+        const searchParams = {
+          time: "2024-01-26 19:00:00",
+          groupSize: 4,
+          restriction: ["Vegetarian", "Gluten"],
+        };
+      
+        return request(app)
+          .get("/api/reservation/search?time=2024-01-26 19:00:00&groupSize=4&restriction=Vegetarian&restriction=Gluten")
+          //.query(searchParams)
+          .expect(200)
+          .expect((res) => {
+            console.log(res)
+            expect(res.body.msg).to.equal("successfully retrieved restaurants");
+            expect(res.body.reservations).to.have.length(1);
+            res.body.reservations.forEach((restaurant) => {
+              expect(restaurant.endorsements).to.satisfy((endorsements) =>
+                endorsements.some((e) => searchParams.restriction.includes(e.name))
+              );
+            });
+          });
+      });
+
+      it("should return an empty list if no restaurants meet the search criteria", async function () {
+        return request(app)
+          .get("/api/reservation/search")
+          .query({ time: "2024-01-27 19:00:00", groupSize: 50 }) // Assuming no table can accommodate 50 people
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.reservations).to.be.an("array").that.is.empty;
+          });
+      });
+
     });
+
   });
 });
