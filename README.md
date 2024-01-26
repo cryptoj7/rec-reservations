@@ -59,9 +59,9 @@ Prisma is a Typescript ORM with a focus on developer ergonomics.
 
 
 ## API Usage
-There are 3 API endopoints
-POST /api/reservation/book
-GET /api/reservation/search
+There are 3 API endopoints \
+POST /api/reservation/book \
+GET /api/reservation/search \
 DELETE api/reservation/{reservationId}/cancel
 
 Examples:
