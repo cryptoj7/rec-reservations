@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Eater {
+  eaterId        Int                    @id @default(autoincrement())
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  name           String
+  dietaryRestrictions EaterDietaryRestriction[]
+  reservations Reservation[]
+}
+
+model DietaryRestriction {
+  restrictionId  Int                    @id @default(autoincrement())
+  name           String
+  restaurantDietaryRestriction RestaurantDietaryRestriction[]
+  eaterDietaryRestriction EaterDietaryRestriction[]
+}
+
+model RestaurantDietaryRestriction {
+  restaurant     Restaurant             @relation(fields: [restaurantId], references: [restaurantId])
+  restaurantId   Int
+  dietaryRestriction DietaryRestriction @relation(fields: [restrictionId], references: [restrictionId])
+  restrictionId  Int
+  @@id([restaurantId, restrictionId])
+}
+
+model EaterDietaryRestriction {
+  eater          Eater                  @relation(fields: [eaterId], references: [eaterId])
+  eaterId        Int
+  dietaryRestriction DietaryRestriction @relation(fields: [restrictionId], references: [restrictionId])
+  restrictionId  Int
+  @@id([eaterId, restrictionId])
+}
+
+model Restaurant {
+  restaurantId   Int                    @id @default(autoincrement())
+  name           String
+  endorsements   Endorsement[]
+  dietaryRestrictions RestaurantDietaryRestriction[]
+  tables         Table[]
+}
+
+model Endorsement {
+  endorsementId  Int                    @id @default(autoincrement())
+  name           String
+  fullName       String
+  restaurant     Restaurant             @relation(fields: [restaurantId], references: [restaurantId])
+  restaurantId   Int
+}
+
+model Table {
+  tableId        Int                    @id @default(autoincrement())
+  capacity       Int
+  restaurant     Restaurant             @relation(fields: [restaurantId], references: [restaurantId])
+  restaurantId   Int
+  reservations   Reservation[]
+}
+
+model Reservation {
+  reservationId  Int                    @id @default(autoincrement())
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  eater          Eater                  @relation(fields: [eaterId], references: [eaterId])
+  eaterId        Int
+  table          Table                  @relation(fields: [tableId], references: [tableId])
+  tableId        Int
+  time           DateTime
+  duration       Int
+  groupSize      Int
+  @@index([tableId, time])
+}
