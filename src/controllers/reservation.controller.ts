@@ -19,8 +19,6 @@ import { handlerWrapper, APIResponse } from "../lib/handlerWrapper";
 import { ErrorMessages } from "../lib/errorMessages";
 import path from "path";
 
-export const DEFAULT_NUM_SHARE_UNITS = 52;
-
 export const bookReservation = handlerWrapper(async (req) => {
 
   const eaterId = requiredIntegerArgument(req.body, "eater");

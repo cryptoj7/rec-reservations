@@ -289,6 +289,49 @@ describe("Reservation Controller", function () {
           });
       });
 
+      const newReservation = {
+        time: "2024-01-28 18:45:00",
+        eater: "1",
+        groupSize: "6",
+        table: "7",
+      };
+    
+      it("book new table", async function () {
+        console.log(app)
+    
+        return request(app)
+          .post("/api/reservation/book")
+          .set("Content-Type", "application/json")
+          .send(newReservation)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body).to.include({
+              reservationId: 2,
+              msg: "successfully created reservation",
+            })
+          })
+      });
+
+      it("should return 1 less restaurant for group size 6", function () {
+        return request(app)
+          .get("/api/reservation/search?time=2024-01-28 18:45:00&groupSize=6")
+          .send()
+          .expect(200)
+          .expect(function (res) {
+            console.log(res)
+            expect(res.body, "body").to.exist;
+            expect(res.body.msg, "msg").to.equal(
+              "successfully retrieved restaurants"
+            );
+
+            expect(res.body.reservations).to.have.length(2);
+            const r = res.body.reservations[0];
+
+            expect(r, "restaurantId").to.exist;
+            expect(r.restaurantId, "id").to.equal(3);
+          });
+      });
+
     });
 
   });
